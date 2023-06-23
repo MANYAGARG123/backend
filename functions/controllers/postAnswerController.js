@@ -1,3 +1,4 @@
+
 const { Timestamp, getFirestore } = require("firebase-admin/firestore");
 const db = getFirestore();
 const { v4: uuidv4 } = require("uuid");
@@ -17,6 +18,7 @@ const postAnswer = async (req, res, next) => {
 
     parentDocRef = db.doc(`AllDoubts/` + doubt_id);
     const subcollectionRef = parentDocRef.collection("Answer");
+    const notcollectionRef = db.collection("notifications");
     const req_body = {
       doubt_id,
       answer_id: myuuid,
@@ -35,11 +37,15 @@ const postAnswer = async (req, res, next) => {
       .then((docRef) => {
         console.log("Document written with ID: ", myuuid);
         const collectionRef = db.collection("AllDoubts").doc(doubt_id);
+        const notcollectionRef = db.collection("notifications");
         collectionRef.get().then((doc) => {
           if (doc.exists) {
             const counterValue = doc.data().count_answers;
-
+           const doubt_heading = doc.data().heading;
+            const doubt_author_id = doc.data().author_id;
             const updatedValue = counterValue + 1;
+
+            
 
             // Update the counter field in the document
             collectionRef
@@ -49,7 +55,12 @@ const postAnswer = async (req, res, next) => {
               })
               .catch((error) => {
                 console.error("Error updating counter:", error);
-              });
+              });          
+             notcollectionRef.set({ doubt_id : doubt_id, doubt_heading: doubt_heading, answer_description: description, doubt_author_id:doubt_author_id,
+                                   answer_author_id: author_id, answer_author_name:author_name, answer_id:answer_id, author_photo_url:author_photo_url, 
+                                   created_on:created_on}).then(()=>{
+               console.log("notification done");
+             }).catch((error)=>{console.log(error)});
           }
         });
       })
